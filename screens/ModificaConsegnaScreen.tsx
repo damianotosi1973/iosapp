@@ -94,6 +94,7 @@ export default function ModificaConsegnaScreen() {
               <Picker.Item label="Seleziona..." value="" enabled={false} />
               <Picker.Item label="GASOLIO" value="GASOLIO" />
               <Picker.Item label="HVO" value="HVO" />
+              <Picker.Item label="BENZINA" value="BENZINA" />
               <Picker.Item label="Lavaggio" value="Lavaggio" />
               <Picker.Item label="Altro" value="Altro" />
             </Picker>
