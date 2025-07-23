@@ -11,76 +11,61 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { db } from '../firebase';
+
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
+import { RootStackParamList } from '../types/navigation';
 
-const API_KEY = 'AIzaSyBK32o_Egk41DEh3_bFJAvDUhCWdlJYLlU';
+const auth = getAuth();
 
-const LoginScreen = () => {
-  const navigation = useNavigation<NativeStackNavigationProp<any>>();
+export default function LoginScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // 🟢 Controllo se già loggato
+  // 🔍 Controlla login persistente
   useEffect(() => {
-    const checkLogin = async () => {
-      const token = await AsyncStorage.getItem('idToken');
+    const check = async () => {
+      const logged = await AsyncStorage.getItem('loggedIn');
       const ruolo = await AsyncStorage.getItem('ruolo');
-      const loggedIn = await AsyncStorage.getItem('loggedIn');
-
-      if (token && ruolo && loggedIn === 'true') {
+      if (logged === 'true' && ruolo) {
         navigation.replace('Home');
       }
     };
-    checkLogin();
+    check();
   }, []);
 
   const handleLogin = async () => {
+    if (!email || !password) return;
     setLoading(true);
+
     try {
-      const res = await fetch(
-        `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: email.trim(),
-            password,
-            returnSecureToken: true,
-          }),
-        }
-      );
+      const cred = await signInWithEmailAndPassword(auth, email.trim(), password.trim());
+      const token = await cred.user.getIdToken();
+      const uid = cred.user.uid;
 
-      const data = await res.json();
-      if (res.ok) {
-        const uid = data.localId;
-        const token = data.idToken;
+      const ref = doc(db, 'users', uid);
+      const snap = await getDoc(ref);
 
-        // 🔐 Salva token
-        await AsyncStorage.setItem('idToken', token);
+      if (!snap.exists()) throw new Error('Utente non trovato');
 
-        // 🔎 Recupera ruolo utente
-        const ref = doc(db, 'users', uid);
-        const snap = await getDoc(ref);
+      const ruolo = snap.data().role;
+      const ruoliConsentiti = ['gestore', 'autista', 'amministratore'];
 
-        if (snap.exists()) {
-          const ruolo = snap.data().role;
-          if (ruolo === 'gestore' || ruolo === 'autista') {
-            await AsyncStorage.setItem('ruolo', ruolo);
-            await AsyncStorage.setItem('loggedIn', 'true');
-            navigation.replace('Home');
-          } else {
-            Alert.alert('Errore', 'Ruolo utente non valido');
-          }
-        } else {
-          Alert.alert('Errore', 'Utente non trovato su Firestore');
-        }
-      } else {
-        Alert.alert('Errore', data.error?.message || 'Login fallito');
-      }
-    } catch {
-      Alert.alert('Errore', 'Connessione non riuscita');
+      if (!ruoliConsentiti.includes(ruolo)) throw new Error('Ruolo non autorizzato');
+
+      // 🧠 Salva localmente
+      await AsyncStorage.multiSet([
+        ['idToken', token],
+        ['ruolo', ruolo],
+        ['loggedIn', 'true'],
+      ]);
+
+      navigation.replace('Home');
+    } catch (err: any) {
+      Alert.alert('Errore', err.message || 'Accesso fallito');
     } finally {
       setLoading(false);
     }
@@ -105,13 +90,13 @@ const LoginScreen = () => {
         secureTextEntry
       />
       {loading ? (
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color="orange" />
       ) : (
         <Button title="Accedi" onPress={handleLogin} />
       )}
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 24 },
@@ -129,5 +114,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-
-export default LoginScreen;

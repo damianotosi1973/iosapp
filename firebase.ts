@@ -1,3 +1,6 @@
+
+import * as firebaseAuth from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
@@ -10,7 +13,14 @@ const firebaseConfig = {
   appId: "1:506764052646:web:2d0c0ff23e5db7bb73cc67"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
-export { db };
+const app = initializeApp(firebaseConfig);
+
+// 🔧 Forza l'import della funzione non tipizzata
+const reactNativePersistence = (firebaseAuth as any).getReactNativePersistence;
+
+export const auth = firebaseAuth.initializeAuth(app, {
+  persistence: reactNativePersistence(AsyncStorage),
+});
+
+export const db = getFirestore(app);

@@ -5,6 +5,7 @@ export type RootStackParamList = {
   Login: undefined;
   NuovaConsegna: undefined;
   Calendario: undefined;
+  FeriePermessi: undefined; // ✅ aggiunto
   ModificaConsegna: {
     consegna: {
       id: string;

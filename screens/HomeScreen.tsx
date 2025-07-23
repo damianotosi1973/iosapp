@@ -67,6 +67,10 @@ export default function HomeScreen() {
   useEffect(() => {
     AsyncStorage.getItem('ruolo').then(setRuolo);
   }, []);
+  useEffect(() => {
+    AsyncStorage.getItem('ruolo').then(setRuolo);
+  }, []);
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
@@ -76,6 +80,9 @@ export default function HomeScreen() {
           </Text>
           <Pressable onPress={() => navigation.navigate('Calendario')} style={{ marginRight: 12 }}>
             <Ionicons name="calendar-outline" size={22} color="#66cc66" />
+          </Pressable>
+          <Pressable onPress={() => navigation.navigate('FeriePermessi')} style={{ marginRight: 12 }}>
+            <Ionicons name="briefcase-outline" size={22} color="#00cccc" />
           </Pressable>
           <Pressable onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={22} color="red" />
