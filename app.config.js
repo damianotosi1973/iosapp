@@ -37,16 +37,21 @@ export default {
       }
     },
     owner: "damianotosi1973",
-    plugins: [
-      [
-        "expo-build-properties",
-        {
-          ios: {
-            useModularHeaders: true
-          }
+plugins: [
+  [
+    "expo-build-properties",
+    {
+      ios: {
+        useModularHeaders: true,
+        podfileProperties: {
+          use_modular_headers: true
         }
-      ]
-    ],
+      }
+    }
+  ]
+],
+
+
     doctor: {
       reactNativeDirectoryCheck: {
         listUnknownPackages: false
