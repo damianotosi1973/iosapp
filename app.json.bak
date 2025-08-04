@@ -12,13 +12,13 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-"ios": {
-  "bundleIdentifier": "com.example.app_consegne",
-  "googleServicesFile": "./GoogleService-Info.plist",
-  "infoPlist": {
-    "ITSAppUsesNonExemptEncryption": false
-  }
-},
+    "ios": {
+      "bundleIdentifier": "com.damianotosi.consegneaziendale",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/ios.png",
@@ -36,6 +36,9 @@
         "projectId": "4ae6d32a-7607-4ca3-b616-7e3af770f67e"
       }
     },
-    "owner": "damianotosi1973"
+    "owner": "damianotosi1973",
+    "plugins": [
+      "expo-build-properties"
+    ]
   }
 }
