@@ -62,3 +62,6 @@ ios/Pods/
 ios/*.xcodeproj/
 ios/*.xcworkspace/
 ios/Podfile.lock
+
+/android
+/ios

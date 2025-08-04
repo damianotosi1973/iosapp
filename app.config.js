@@ -46,6 +46,11 @@ export default {
           }
         }
       ]
-    ]
+    ],
+    doctor: {
+      reactNativeDirectoryCheck: {
+        listUnknownPackages: false
+      }
+    }
   }
 }
