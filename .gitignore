@@ -64,4 +64,4 @@ ios/*.xcworkspace/
 ios/Podfile.lock
 
 /android
-/ios
+# /ios
