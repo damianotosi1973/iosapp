@@ -33,7 +33,6 @@
       "ios": {
         "enterpriseProvisioning": "adhoc",
         "simulator": false,
-        "podfile": "./ios/Podfile",
         "env": {
           "COCOAPODS_UPDATE": "1"
         }
