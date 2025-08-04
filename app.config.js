@@ -3,42 +3,16 @@ export default {
     name: "appconsegne-test",
     slug: "iosappconsegne",
     version: "1.0.0",
-    orientation: "portrait",
-    icon: "./assets/ios.png",
-    userInterfaceStyle: "light",
     newArchEnabled: false,
-    splash: {
-      image: "./assets/ios.png",
-      resizeMode: "contain",
-      backgroundColor: "#ffffff"
-    },
-    ios: {
-      bundleIdentifier: "com.damianotosi.consegneaziendale",
-      googleServicesFile: "./GoogleService-Info.plist",
-      infoPlist: {
-        ITSAppUsesNonExemptEncryption: false
-      }
-    },
-    android: {
-      adaptiveIcon: {
-        foregroundImage: "./assets/ios.png",
-        backgroundColor: "#ffffff"
-      },
-      edgeToEdgeEnabled: true,
-      package: "com.damianotosi.consegneaziendale",
-      googleServicesFile: "./google-services.json"
-    },
-    web: {
-      favicon: "./assets/favicon.png"
-    },
+
     extra: {
       eas: {
         projectId: "4ae6d32a-7607-4ca3-b616-7e3af770f67e"
       }
     },
+
     owner: "damianotosi1973",
 
-    // 🔧 Rimuoviamo expo-build-properties per iOS (ora gestito da Podfile)
     plugins: [
       [
         "expo-build-properties",
