@@ -5,6 +5,10 @@ export default {
     version: "1.0.0",
     newArchEnabled: false,
 
+    ios: {
+      bundleIdentifier: "com.damianotosi.consegneaziendale"
+    },
+
     extra: {
       eas: {
         projectId: "4ae6d32a-7607-4ca3-b616-7e3af770f67e"
