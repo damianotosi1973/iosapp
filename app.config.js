@@ -37,17 +37,21 @@ export default {
       }
     },
     owner: "damianotosi1973",
+
+    // 🔧 Rimuoviamo expo-build-properties per iOS (ora gestito da Podfile)
     plugins: [
       [
         "expo-build-properties",
         {
-          ios: {
-            useModularHeaders: true,
-            deploymentTarget: "15.1"
+          android: {
+            compileSdkVersion: 34,
+            targetSdkVersion: 34,
+            buildToolsVersion: "34.0.0"
           }
         }
       ]
     ],
+
     doctor: {
       reactNativeDirectoryCheck: {
         listUnknownPackages: false

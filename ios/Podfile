@@ -1,25 +1,22 @@
-platform :ios, '13.0'
+platform :ios, '15.1'
+
 use_modular_headers!
+
+require_relative '../node_modules/react-native/scripts/react_native_pods'
+require_relative '../node_modules/@react-native-community/cli-platform-ios/native_modules'
 
 target 'appconsegnetest' do
   config = use_native_modules!
 
-  use_react_native!(
-    :path => config[:reactNativePath],
-    :hermes_enabled => false
-  )
+  use_expo_modules!
 
-  # Firebase pods
   pod 'Firebase/Core'
   pod 'Firebase/Auth'
   pod 'Firebase/Firestore'
   pod 'Firebase/Messaging'
 
-  # Altri pod Expo/Firebase verranno auto-linkati
-
   post_install do |installer|
     react_native_post_install(installer)
-
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
         config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
