@@ -1,294 +1,230 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  ScrollView,
   FlatList,
   Pressable,
-  UIManager,
-  Platform,
+  Modal,
+  StyleSheet,
+  Button,
+  ScrollView,
 } from 'react-native';
-import { collection, query, onSnapshot, orderBy, Timestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { format, addDays } from 'date-fns';
+import { firestore } from '../firebase';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
 type Consegna = {
   id: string;
+  tipoProdotto: string;
   destinatario: string;
   luogo: string;
-  tipoProdotto: string;
   quantita: number;
   orario?: string;
   note?: string;
   effettuata: boolean;
-  data: Timestamp;
+  data: FirebaseFirestoreTypes.Timestamp;
 };
 
-if (Platform.OS === 'android') {
-  UIManager.setLayoutAnimationEnabledExperimental?.(true);
-}
+const generaGiorni = (numGiorni: number): string[] => {
+  const giorni: string[] = [];
+  for (let i = 0; i < numGiorni; i++) {
+    giorni.push(format(addDays(new Date(), i), 'yyyy-MM-dd'));
+  }
+  return giorni;
+};
 
-export default function CalendarioScreen() {
+const CalendarioScreen = () => {
+  const [dataSelezionata, setDataSelezionata] = useState<string>(
+    format(new Date(), 'yyyy-MM-dd')
+  );
   const [consegne, setConsegne] = useState<Consegna[]>([]);
-  const [giorni, setGiorni] = useState<Date[]>([]);
-  const [selezionato, setSelezionato] = useState<Date | null>(null);
   const [dettaglio, setDettaglio] = useState<Consegna | null>(null);
 
-  useEffect(() => {
-    const oggi = new Date();
-    const prossimi7 = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(oggi);
-      d.setDate(d.getDate() + i);
-      return d;
-    });
-    setGiorni(prossimi7);
-    setSelezionato(prossimi7[0]);
-    const q = query(collection(db, 'consegne'), orderBy('data', 'asc'));
-    const unsub = onSnapshot(q, (snap) => {
-      const docs = snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      })) as Consegna[];
-      setConsegne(docs);
-    });
+  const giorni = generaGiorni(10);
 
-    return unsub;
+  useEffect(() => {
+    const unsubscribe = firestore()
+      .collection('consegne')
+      .orderBy('data', 'asc')
+      .onSnapshot((snap) => {
+        const raccolte = snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        })) as Consegna[];
+
+        setConsegne(raccolte);
+      });
+
+    return unsubscribe;
   }, []);
 
-  const stesseDate = (a: Date, b: Date) =>
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate();
+  const consegneDelGiorno = consegne.filter((c) => {
+    const giorno = c.data.toDate();
+    const giornoStr = format(giorno, 'yyyy-MM-dd');
+    return giornoStr === dataSelezionata;
+  });
 
-  const toMinuti = (ora?: string) => {
-    if (!ora) return Infinity;
-    const [h, m] = ora.split(':').map(Number);
-    return h * 60 + m;
-  };
+  const contaConsegnePerGiorno = (giorno: string) =>
+    consegne.filter((c) => format(c.data.toDate(), 'yyyy-MM-dd') === giorno).length;
 
-  const filtered = consegne
-    .filter((c) => {
-      const dt = c.data.toDate();
-      return selezionato ? stesseDate(dt, selezionato) : false;
-    })
-    .sort((a, b) => toMinuti(a.orario) - toMinuti(b.orario));
-
-  const haConsegneIn = (giorno: Date) =>
-    consegne.some((c) => stesseDate(c.data.toDate(), giorno));
-
-  const nomeGiorno = (d: Date) =>
-    d.toLocaleDateString('it-IT', { weekday: 'short' }).toUpperCase();
-
-  const giornoNumero = (d: Date) => d.getDate();
   return (
-    <View style={styles.wrapper}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.header}>
-        {giorni.map((g) => {
-          const selez = selezionato && stesseDate(g, selezionato);
+    <View style={styles.container}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {giorni.map((giorno) => {
+          const isSelected = giorno === dataSelezionata;
+          const count = contaConsegnePerGiorno(giorno);
+
           return (
             <Pressable
-              key={g.toISOString()}
-              onPress={() => setSelezionato(g)}
-              style={[styles.giorno, selez && styles.giornoSelezionato]}
+              key={giorno}
+              onPress={() => setDataSelezionata(giorno)}
+              style={[
+                styles.dayButton,
+                isSelected && styles.dayButtonSelected,
+              ]}
             >
-              <Text style={styles.giornoNome}>{nomeGiorno(g)}</Text>
-              <Text style={styles.giornoNumero}>{giornoNumero(g)}</Text>
-              {haConsegneIn(g) && <View style={styles.pallino} />}
+              <Text
+                style={isSelected ? styles.dayTextSelected : styles.dayText}
+              >
+                {format(new Date(giorno), 'dd MMM')}
+              </Text>
+              {count > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{count}</Text>
+                </View>
+              )}
             </Pressable>
           );
         })}
       </ScrollView>
 
+      <Text style={styles.titolo}>
+        Consegne per il {format(new Date(dataSelezionata), 'dd MMM yyyy')}
+      </Text>
+
       <FlatList
-        contentContainerStyle={styles.lista}
-        data={filtered}
+        data={consegneDelGiorno}
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={
-          <Text style={styles.vuoto}>Nessuna consegna per questo giorno.</Text>
-        }
         renderItem={({ item }) => (
-          <Pressable onPress={() => setDettaglio(item)} style={styles.card}>
-            <View style={styles.riga}>
-              <Text style={styles.prodotto}>{item.tipoProdotto}</Text>
-              <Text style={styles.destinatario}>{item.destinatario}</Text>
-            </View>
-            <View style={styles.riga}>
-              <Text style={styles.luogo}>📍 {item.luogo}</Text>
-              <Text style={styles.quantita}>Quantità: {item.quantita}</Text>
-            </View>
-            {item.orario && <Text style={styles.orario}>⏰ {item.orario}</Text>}
-            <View style={styles.footer}>
-              <Text
-                style={[
-                  styles.flag,
-                  { color: item.effettuata ? 'green' : 'orange' },
-                ]}
-              >
-                {item.effettuata ? '✔️ Effettuata' : '⏳ Da fare'}
+          <Pressable onPress={() => setDettaglio(item)}>
+            <View style={styles.item}>
+              <Text style={styles.titolo}>{item.tipoProdotto}</Text>
+              <Text>{item.destinatario}</Text>
+              <Text>{item.luogo}</Text>
+              <Text>{item.quantita} pezzi</Text>
+              {item.orario && <Text>⏰ {item.orario}</Text>}
+              {item.note && <Text>💬 {item.note}</Text>}
+              <Text>
+                {item.effettuata ? '✅ Effettuata' : '🕒 Da effettuare'}
               </Text>
             </View>
           </Pressable>
         )}
+        ListEmptyComponent={
+          <Text style={styles.empty}>Nessuna consegna per questo giorno.</Text>
+        }
       />
 
-      {dettaglio && (
-        <View style={styles.modalOverlay}>
+      <Modal
+        visible={!!dettaglio}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setDettaglio(null)}
+      >
+        <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitolo}>📦 Dettaglio Consegna</Text>
-            <Text style={styles.txt}>🛒 Prodotto: {dettaglio.tipoProdotto}</Text>
-            <Text style={styles.txt}>👤 Destinatario: {dettaglio.destinatario}</Text>
-            <Text style={styles.txt}>📍 Luogo: {dettaglio.luogo}</Text>
-            <Text style={styles.txt}>Quantità: {dettaglio.quantita}</Text>
-            {dettaglio.orario && (
-              <Text style={styles.txt}>⏰ Orario: {dettaglio.orario}</Text>
+            {dettaglio && (
+              <>
+                <Text style={styles.titolo}>{dettaglio.tipoProdotto}</Text>
+                <Text>{dettaglio.destinatario}</Text>
+                <Text>{dettaglio.luogo}</Text>
+                <Text>{dettaglio.quantita} pezzi</Text>
+                {dettaglio.orario && <Text>⏰ {dettaglio.orario}</Text>}
+                {dettaglio.note && <Text>💬 {dettaglio.note}</Text>}
+                <Text>
+                  {dettaglio.effettuata
+                    ? '✅ Effettuata'
+                    : '🕒 Da effettuare'}
+                </Text>
+              </>
             )}
-            {dettaglio.note && (
-              <Text style={styles.txt}>💬 Note: {dettaglio.note}</Text>
-            )}
-            <Text
-              style={[
-                styles.txt,
-                {
-                  color: dettaglio.effettuata ? 'green' : 'orange',
-                  fontWeight: 'bold',
-                },
-              ]}
-            >
-              {dettaglio.effettuata ? '✔️ Effettuata' : '⏳ Da fare'}
-            </Text>
-            <Pressable onPress={() => setDettaglio(null)} style={styles.chiudiBtn}>
-              <Text style={{ color: '#fff' }}>Chiudi</Text>
-            </Pressable>
+            <Button title="Chiudi" onPress={() => setDettaglio(null)} />
           </View>
         </View>
-      )}
+      </Modal>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  wrapper: { flex: 1, backgroundColor: '#fff' },
-  header: {
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    backgroundColor: '#f9f9f9',
-  },
-  giorno: {
-    width: 60,
-    alignItems: 'center',
-    marginHorizontal: 4,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  giornoSelezionato: {
-    backgroundColor: '#66cc66',
-  },
-  giornoNome: {
-    fontWeight: 'bold',
-    fontSize: 12,
-    color: '#333',
-  },
-  giornoNumero: {
-    fontSize: 18,
-    color: '#222',
-  },
-  pallino: {
-    width: 8,
-    height: 8,
-    backgroundColor: 'green',
-    borderRadius: 4,
-    marginTop: 4,
-  },
-  lista: {
-    padding: 16,
-    paddingBottom: 100,
-  },
-  card: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    backgroundColor: '#f8f8f8',
-  },
-  riga: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  prodotto: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  destinatario: {
-    fontSize: 16,
-    color: '#555',
-  },
-  luogo: {
-    fontSize: 14,
-    color: '#444',
+  container: {
     flex: 1,
+    padding: 16,
+    backgroundColor: '#fff',
   },
-  quantita: {
-    fontSize: 14,
-    color: '#444',
-    textAlign: 'right',
-    minWidth: 80,
+  titolo: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginVertical: 8,
   },
-  orario: {
+  item: {
+    padding: 12,
+    marginBottom: 10,
+    backgroundColor: '#eee',
+    borderRadius: 8,
+  },
+  empty: {
+    textAlign: 'center',
+    marginTop: 20,
+    color: '#888',
+  },
+  dayButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    borderRadius: 20,
+    backgroundColor: '#ddd',
+    position: 'relative',
+  },
+  dayButtonSelected: {
+    backgroundColor: '#00adf5',
+  },
+  dayText: {
     fontSize: 14,
     color: '#333',
-    marginTop: 4,
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 4,
-  },
-  flag: {
-    fontWeight: '600',
+  dayTextSelected: {
     fontSize: 14,
+    color: '#fff',
+    fontWeight: 'bold',
   },
-  vuoto: {
-    textAlign: 'center',
-    color: '#999',
-    marginTop: 40,
-    fontStyle: 'italic',
-  },
-  txt: {
-    color: '#444',
-    marginBottom: 4,
-    fontSize: 14,
-  },
-  modalOverlay: {
+  badge: {
     position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
+    top: -4,
+    right: -4,
+    backgroundColor: '#ff3b30',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    minWidth: 20,
     alignItems: 'center',
-    padding: 20,
-    zIndex: 1000,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
+    margin: 20,
+    padding: 20,
     backgroundColor: '#fff',
     borderRadius: 10,
-    padding: 20,
-    width: '100%',
-    maxWidth: 400,
-  },
-  modalTitolo: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  chiudiBtn: {
-    marginTop: 20,
-    backgroundColor: '#333',
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center',
   },
 });
+
+export default CalendarioScreen;

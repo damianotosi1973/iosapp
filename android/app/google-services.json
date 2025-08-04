@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "506764052646",
+    "project_id": "appconsegne-e7a49",
+    "storage_bucket": "appconsegne-e7a49.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:506764052646:android:33eee8926aab899473cc67",
+        "android_client_info": {
+          "package_name": "com.damiano.consegne_tv_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvejpDlBGU16w-Odccj_FGotMMg33MZC0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:506764052646:android:b3c8514852046c8673cc67",
+        "android_client_info": {
+          "package_name": "com.example.app_consegne"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvejpDlBGU16w-Odccj_FGotMMg33MZC0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:506764052646:android:a8b5f562f80ca5d773cc67",
+        "android_client_info": {
+          "package_name": "com.example.app_tv"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvejpDlBGU16w-Odccj_FGotMMg33MZC0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

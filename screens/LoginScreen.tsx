@@ -12,12 +12,8 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { auth, firestore } from '../firebase'; // ✅ Import corretto
 import { RootStackParamList } from '../types/navigation';
-
-const auth = getAuth();
 
 export default function LoginScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -42,16 +38,15 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      const cred = await signInWithEmailAndPassword(auth, email.trim(), password.trim());
+      const cred = await auth().signInWithEmailAndPassword(email.trim(), password.trim());
       const token = await cred.user.getIdToken();
       const uid = cred.user.uid;
 
-      const ref = doc(db, 'users', uid);
-      const snap = await getDoc(ref);
+      const snap = await firestore().collection('users').doc(uid).get();
 
-      if (!snap.exists()) throw new Error('Utente non trovato');
+      if (!snap.exists) throw new Error('Utente non trovato');
 
-      const ruolo = snap.data().role;
+      const ruolo = snap.data()?.role;
       const ruoliConsentiti = ['gestore', 'autista', 'amministratore'];
 
       if (!ruoliConsentiti.includes(ruolo)) throw new Error('Ruolo non autorizzato');

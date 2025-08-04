@@ -4,31 +4,20 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
-  FlatList,
-  Alert,
   SafeAreaView,
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { useNavigation } from '@react-navigation/native';
-import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
-import { Ionicons } from '@expo/vector-icons';
+import firestore from '@react-native-firebase/firestore';
 
 type Evento = {
   id: string;
   nome: string;
   tipo: string;
   motivo?: string;
-  dal?: Date;
-  al?: Date;
-  giorno?: Date;
+  dal?: Date | null;
+  al?: Date | null;
+  giorno?: Date | null;
   ore?: number;
-};
-
-type Utente = {
-  nome: string;
-  ruolo: string;
 };
 
 const coloriOperai: Record<string, string> = {
@@ -45,213 +34,192 @@ const coloriOperai: Record<string, string> = {
   Annalisa: 'cyan',
   Matteo: 'indigo',
   Alessio: 'lime',
-  Francesco: 'white',
+  Francesco: 'black',
 };
 
-export default function FeriePermessiScreen() {
-  const navigation = useNavigation();
-  const [eventi, setEventi] = useState<Record<string, Evento[]>>({});
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toLocaleDateString('sv-SE')
-  );
-  const [utente, setUtente] = useState<Utente | null>(null);
-  const isGestore = utente?.ruolo === 'gestore' || utente?.ruolo === 'amministratore';
+const mesiBrevi = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+
+const parseData = (val: any): Date | null => {
+  if (!val) return null;
+
+  if (typeof val === 'string') {
+    const parts = val.split('T')[0].split('-');
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    return new Date(year, month, day);
+  }
+
+  if (val.toDate) {
+    const d = val.toDate();
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  return null;
+};
+
+const formattaData = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const formattaDataBreve = (date: Date): string => {
+  const giorno = date.getDate();
+  const mese = mesiBrevi[date.getMonth()];
+  return `${giorno} ${mese}`;
+};
+
+const FeriePermessiScreen = () => {
+  const [eventi, setEventi] = useState<Evento[]>([]);
+  const [selezionato, setSelezionato] = useState<string>('');
+  const [calendarDots, setCalendarDots] = useState<Record<string, any>>({});
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, 'eventi_lavoratori'), (snapshot) => {
-      const nuoviEventi: Record<string, Evento[]> = {};
-
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        const e: Evento = {
-          id: doc.id,
-          nome: data.nome || '',
-          tipo: (data.tipo || '').toLowerCase(),
-          motivo: data.motivo || '',
-          ore: typeof data.ore === 'number' ? data.ore : undefined,
-          dal: parseData(data.dal),
-          al: parseData(data.al),
-          giorno: parseData(data.giorno),
-        };
-        nuoviEventi[e.nome] = nuoviEventi[e.nome] || [];
-        nuoviEventi[e.nome].push(e);
+    const unsubscribe = firestore()
+      .collection('eventi_lavoratori')
+      .onSnapshot(snapshot => {
+        const nuoviEventi: Evento[] = [];
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const evento: Evento = {
+            id: doc.id,
+            nome: data.nome,
+            tipo: data.tipo,
+            motivo: data.motivo,
+            dal: parseData(data.dal),
+            al: parseData(data.al),
+            giorno: parseData(data.giorno),
+            ore: data.ore,
+          };
+          nuoviEventi.push(evento);
+        });
+        setEventi(nuoviEventi);
+        generaPallini(nuoviEventi);
       });
-
-      setEventi(nuoviEventi);
-    });
 
     return () => unsubscribe();
   }, []);
 
-  function parseData(val: any): Date | undefined {
-    if (val?.toDate) return val.toDate();
-    if (typeof val === 'string') {
-      const d = new Date(val);
-      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const generaPallini = (eventi: Evento[]) => {
+    const dots: Record<string, any> = {};
+
+    eventi.forEach(ev => {
+      const colore = coloriOperai[ev.nome] || 'gray';
+      const dateList: string[] = [];
+
+      if (ev.giorno) {
+        dateList.push(formattaData(ev.giorno));
+      } else if (ev.dal && ev.al) {
+        const current = new Date(ev.dal);
+        const fine = new Date(ev.al);
+        fine.setDate(fine.getDate() - 1);
+
+        while (current <= fine) {
+          dateList.push(formattaData(current));
+          current.setDate(current.getDate() + 1);
+        }
+      }
+
+      dateList.forEach(date => {
+        if (!dots[date]) dots[date] = { dots: [] };
+        dots[date].dots.push({ key: ev.id, color: colore });
+      });
+    });
+
+    setCalendarDots(dots);
+  };
+
+  const eventiDelGiorno = eventi.filter(ev => {
+    if (!selezionato) return false;
+
+    const giornoSelezionato = formattaData(new Date(selezionato));
+
+    if (ev.giorno) {
+      return formattaData(ev.giorno) === giornoSelezionato;
     }
-    return undefined;
-  }
 
-  function generaMarcatori() {
-    const marks: Record<string, { dots: { key: string; color: string }[] }> = {};
+    if (ev.dal && ev.al) {
+      const dal = formattaData(ev.dal);
+      const giornoRientro = new Date(ev.al);
+      giornoRientro.setDate(giornoRientro.getDate() - 1);
+      const ultimoGiornoFerie = formattaData(giornoRientro);
 
-    Object.keys(eventi).forEach((nome) => {
-      const colore = coloriOperai[nome] || 'gray';
-      eventi[nome].forEach((e) => {
-        if (e.tipo === 'ferie' && e.dal && e.al) {
-          const dal = new Date(e.dal);
-          const fineAssenza = new Date(e.al);
-          fineAssenza.setDate(fineAssenza.getDate() - 1); // ❗ escludi giorno di rientro
+      return giornoSelezionato >= dal && giornoSelezionato <= ultimoGiornoFerie;
+    }
 
-          const current = new Date(dal);
-          while (current <= fineAssenza) {
-            const key = current.toLocaleDateString('sv-SE');
-            marks[key] = marks[key] || { dots: [] };
-            marks[key].dots.push({ key: nome, color: colore });
-            current.setDate(current.getDate() + 1);
-          }
-        } else if (e.tipo === 'permesso' && e.giorno) {
-          const key = e.giorno.toLocaleDateString('sv-SE');
-          marks[key] = marks[key] || { dots: [] };
-          marks[key].dots.push({ key: nome, color: colore });
-        }
-      });
-    });
-
-    return marks;
-  }
-
-  const marcatori = generaMarcatori();
-  function eventiDelGiorno(): Evento[] {
-    const selezionati: Evento[] = [];
-    Object.keys(eventi).forEach((nome) => {
-      eventi[nome].forEach((e) => {
-        if (e.tipo === 'ferie' && e.dal && e.al) {
-          const giorno = new Date(selectedDate);
-          if (giorno >= e.dal && giorno < e.al) selezionati.push(e); // ❗ notare "< e.al" = escluso rientro
-        } else if (e.tipo === 'permesso' && e.giorno) {
-          const giornoStr = e.giorno.toLocaleDateString('sv-SE');
-          if (giornoStr === selectedDate) selezionati.push(e);
-        }
-      });
-    });
-
-    return selezionati;
-  }
-
-  function formatData(data: Date) {
-    return data.toLocaleDateString('it-IT', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  }
-
-  function confermaEliminazione(idEvento: string) {
-    Alert.alert('Elimina evento', 'Vuoi davvero eliminarlo?', [
-      { text: 'Annulla', style: 'cancel' },
-      {
-        text: 'Elimina',
-        style: 'destructive',
-        onPress: () => {
-          // deleteDoc(doc(db, 'eventi_lavoratori', idEvento)) // da attivare
-        },
-      },
-    ]);
-  }
+    return false;
+  });
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>
-      <View style={styles.container}>
-        <Text style={styles.titolo}>Calendario Ferie & Permessi</Text>
+    <SafeAreaView style={styles.container}>
+      <Calendar
+        markingType="multi-dot"
+        markedDates={{
+          ...calendarDots,
+          [selezionato]: {
+            ...(calendarDots[selezionato] || {}),
+            selected: true,
+            selectedColor: '#ccc',
+          },
+        }}
+        onDayPress={day => setSelezionato(day.dateString)}
+      />
 
-        <Calendar
-          markingType="multi-dot"
-          onDayPress={(day: { dateString: string }) => setSelectedDate(day.dateString)}
-          markedDates={marcatori}
-          theme={{
-            calendarBackground: '#000',
-            dayTextColor: '#fff',
-            monthTextColor: '#fff',
-            arrowColor: '#fff',
-            selectedDayBackgroundColor: '#1E88E5',
-            todayTextColor: '#FFA726',
-          }}
-        />
-
-        <FlatList
-          style={styles.legenda}
-          data={Object.entries(coloriOperai)}
-          keyExtractor={([nome], index) => nome + '-' + index}
-          numColumns={3}
-          renderItem={({ item }) => (
-            <View style={[styles.chip, { backgroundColor: item[1] }]}>
-              <Text style={styles.chipText}>{item[0]}</Text>
-            </View>
-          )}
-        />
-
-        <Text style={styles.subTitle}>Eventi del {formatData(new Date(selectedDate))}</Text>
-
-        <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-          {eventiDelGiorno().length === 0 ? (
-            <Text style={{ color: '#888', fontStyle: 'italic', marginTop: 20 }}>
-              🕊️ Nessun evento per questo giorno
+      <Text style={styles.titolo}>Eventi del {selezionato}</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {eventiDelGiorno.map(ev => (
+          <View key={ev.id} style={styles.eventoBox}>
+            <Text style={{ color: coloriOperai[ev.nome] || 'gray', fontWeight: 'bold' }}>
+              {ev.nome}
             </Text>
-          ) : (
-            eventiDelGiorno().map((e) => {
-              const colore = coloriOperai[e.nome] || 'gray';
-              const tipo = e.tipo;
-              const titolo =
-                tipo === 'ferie'
-                  ? `Ferie dal ${formatData(e.dal!)} al ${formatData(e.al!)}`
-                  : `Permesso ${formatData(e.giorno!)} (${e.ore}h)`;
-              return (
-                <View key={e.id} style={styles.eventoBox}>
-                  <Ionicons
-                    name={tipo === 'ferie' ? 'umbrella' : 'time'}
-                    size={20}
-                    color={colore}
-                    style={{ marginRight: 8 }}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white' }}>{e.nome} — {titolo}</Text>
-                    <Text style={{ color: 'white', fontSize: 12 }}>Motivo: {e.motivo}</Text>
-                  </View>
-                  {isGestore && (
-                    <View style={styles.buttons}>
-                      <TouchableOpacity>
-                        <Ionicons name="pencil" size={20} color="white" />
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => confermaEliminazione(e.id)}>
-                        <Ionicons name="trash" size={20} color="red" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </View>
-              );
-            })
-          )}
-        </ScrollView>
-      </View>
+            <Text>{ev.tipo} {ev.motivo ? `- ${ev.motivo}` : ''}</Text>
+
+            {ev.tipo === 'ferie' && ev.dal && ev.al && (
+              <Text>
+                Dal: {formattaDataBreve(ev.dal)} — Al: {formattaDataBreve(ev.al)}
+              </Text>
+            )}
+
+            {ev.tipo === 'permesso' && ev.ore && (
+              <Text>Ore: {ev.ore}</Text>
+            )}
+          </View>
+        ))}
+      </ScrollView>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000', padding: 10 },
-  titolo: { fontSize: 20, color: '#FFA726', marginBottom: 8 },
-  legenda: { marginVertical: 8 },
-  chip: { padding: 6, borderRadius: 12, margin: 4 },
-  chipText: { color: '#000', fontSize: 12 },
-  subTitle: { color: 'orange', fontSize: 16, marginVertical: 4 },
-  eventoBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#222',
-    padding: 8,
-    marginVertical: 4,
-    borderRadius: 8,
+  container: {
+    flex: 1,
+    backgroundColor: '#f2f2f2',
+    padding: 10,
   },
-  buttons: { flexDirection: 'row', gap: 12, marginLeft: 8 },
+  titolo: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginVertical: 10,
+    textAlign: 'center',
+    color: '#333',
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  eventoBox: {
+    backgroundColor: '#fff',
+    padding: 12,
+    marginVertical: 6,
+    marginHorizontal: 10,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 3,
+  },
 });
+
+export default FeriePermessiScreen;

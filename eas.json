@@ -16,7 +16,10 @@
     "adhoc": {
       "distribution": "internal",
       "ios": {
-        "enterpriseProvisioning": "adhoc"
+        "enterpriseProvisioning": "adhoc",
+        "simulator": false
+
+
       }
     }
   },

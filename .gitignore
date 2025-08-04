@@ -15,8 +15,6 @@ web-build/
 *.key
 *.pem
 *.mobileprovision
-google-services.json
-GoogleService-Info.plist
 credentials.json
 
 # 👉 Certificati, provisioning, archive

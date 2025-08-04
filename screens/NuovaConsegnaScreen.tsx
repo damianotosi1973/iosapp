@@ -14,8 +14,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import firestore from '@react-native-firebase/firestore';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function NuovaConsegnaScreen() {
@@ -32,6 +31,11 @@ export default function NuovaConsegnaScreen() {
   const salva = async () => {
     if (!luogo.trim()) {
       Alert.alert('⚠️ Campo obbligatorio', 'Inserisci il luogo della consegna');
+      return;
+    }
+
+    if (!quantita || isNaN(Number(quantita)) || Number(quantita) <= 0) {
+      Alert.alert('⚠️ Quantità non valida', 'Inserisci una quantità numerica positiva');
       return;
     }
 
@@ -56,8 +60,8 @@ export default function NuovaConsegnaScreen() {
     console.log('📤 Consegna:', docDaSalvare);
 
     try {
-      const ref = collection(db, 'consegne');
-      const docRef = await addDoc(ref, docDaSalvare);
+      const ref = firestore().collection('consegne');
+      const docRef = await ref.add(docDaSalvare);
       console.log('✅ ID documento:', docRef.id);
       Alert.alert('✅ Successo', 'Consegna registrata correttamente!');
     } catch (error: any) {

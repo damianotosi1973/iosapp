@@ -4,27 +4,29 @@
     "slug": "iosappconsegne",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/ios.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": false,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/ios.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.damianotosi.consegneaziendale",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
-    },
+"ios": {
+  "bundleIdentifier": "com.example.app_consegne",
+  "googleServicesFile": "./GoogleService-Info.plist",
+  "infoPlist": {
+    "ITSAppUsesNonExemptEncryption": false
+  }
+},
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/ios.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.damianotosi.consegneaziendale",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -10,22 +10,13 @@ import {
   Pressable,
   SafeAreaView,
 } from 'react-native';
-import {
-  collection,
-  query,
-  orderBy,
-  onSnapshot,
-  updateDoc,
-  deleteDoc,
-  doc,
-  Timestamp,
-} from 'firebase/firestore';
-import { db } from '../firebase';
+import { firestore } from '../firebase'; // ✅ usa React Native Firebase
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
 type Consegna = {
   id: string;
@@ -36,7 +27,7 @@ type Consegna = {
   orario?: string;
   note?: string;
   effettuata: boolean;
-  data: Timestamp;
+  data: FirebaseFirestoreTypes.Timestamp;
 };
 
 type Raggruppo = {
@@ -63,11 +54,7 @@ export default function HomeScreen() {
       },
     ]);
   };
-
-  useEffect(() => {
-    AsyncStorage.getItem('ruolo').then(setRuolo);
-  }, []);
-  useEffect(() => {
+    useEffect(() => {
     AsyncStorage.getItem('ruolo').then(setRuolo);
   }, []);
 
@@ -104,49 +91,48 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    const q = query(collection(db, 'consegne'), orderBy('data', 'asc'));
+    const unsubscribe = firestore()
+      .collection('consegne')
+      .orderBy('data', 'asc')
+      .onSnapshot((snap) => {
+        const raccolte = snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        })) as Consegna[];
 
-    const unsub = onSnapshot(q, (snap) => {
-      const raccolte = snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      })) as Consegna[];
-
-      const raggruppate: { [key: string]: Consegna[] } = {};
-      raccolte.forEach((item) => {
-        const dataLocale = item.data.toDate().toLocaleDateString('it-IT', {
-          timeZone: 'Europe/Rome',
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
+        const raggruppate: { [key: string]: Consegna[] } = {};
+        raccolte.forEach((item) => {
+          const dataLocale = item.data.toDate().toLocaleDateString('it-IT', {
+            timeZone: 'Europe/Rome',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+          });
+          if (!raggruppate[dataLocale]) raggruppate[dataLocale] = [];
+          raggruppate[dataLocale].push(item);
         });
-        if (!raggruppate[dataLocale]) raggruppate[dataLocale] = [];
-        raggruppate[dataLocale].push(item);
+
+        const trasformate: Raggruppo[] = Object.entries(raggruppate).map(([giorno, consegne]) => {
+          const toMinuti = (ora?: string) => {
+            if (!ora) return Infinity;
+            const [h, m] = ora.split(':').map(Number);
+            return h * 60 + m;
+          };
+
+          const ord = [...consegne].sort((a, b) => toMinuti(a.orario) - toMinuti(b.orario));
+
+          return { giorno, consegne: ord };
+        });
+
+        setGruppi(trasformate);
+        setLoading(false);
       });
 
-      const trasformate: Raggruppo[] = Object.entries(raggruppate).map(([giorno, consegne]) => {
-        const toMinuti = (ora?: string) => {
-          if (!ora) return Infinity;
-          const [h, m] = ora.split(':').map(Number);
-          return h * 60 + m;
-        };
-
-        const ord = [...consegne].sort(
-          (a, b) => toMinuti(a.orario) - toMinuti(b.orario)
-        );
-
-        return { giorno, consegne: ord };
-      });
-
-      setGruppi(trasformate);
-      setLoading(false);
-    });
-
-    return unsub;
+    return unsubscribe;
   }, []);
-  const aggiornaEffettuata = async (id: string, valore: boolean) => {
+    const aggiornaEffettuata = async (id: string, valore: boolean) => {
     try {
-      await updateDoc(doc(db, 'consegne', id), { effettuata: valore });
+      await firestore().collection('consegne').doc(id).update({ effettuata: valore });
     } catch {
       Alert.alert('Errore', 'Impossibile aggiornare la consegna');
     }
@@ -160,7 +146,7 @@ export default function HomeScreen() {
         style: 'destructive',
         onPress: async () => {
           try {
-            await deleteDoc(doc(db, 'consegne', id));
+            await firestore().collection('consegne').doc(id).delete();
           } catch {
             Alert.alert('Errore', 'Non è stato possibile eliminare la consegna');
           }
@@ -207,8 +193,7 @@ export default function HomeScreen() {
       </View>
     </View>
   );
-
-  if (loading) {
+    if (loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="orange" />
