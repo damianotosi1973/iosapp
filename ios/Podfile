@@ -35,6 +35,7 @@ target 'appconsegnetest' do
 
   # Forza modular headers per gRPC-C++
   pod 'gRPC-C++', :modular_headers => true
+  pod 'gRPC-Core', :modular_headers => true
 
   # Mantieni use_frameworks solo se necessario
   use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
