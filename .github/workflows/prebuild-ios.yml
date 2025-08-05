@@ -1,0 +1,37 @@
+name: Prebuild iOS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  prebuild-ios:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install Expo CLI
+        run: npm install -g expo-cli
+
+      - name: Authenticate with Expo
+        run: expo login --token ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run expo prebuild for iOS
+        run: npx expo prebuild --platform ios
+
+      - name: Commit generated ios folder
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add ios/
+          git commit -m "Generate ios folder via GitHub Actions"
+          git push
