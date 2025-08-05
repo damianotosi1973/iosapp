@@ -59,9 +59,9 @@ android/build/
 # 👉 iOS build (se usi bare workflow o EAS prebuild)
 ios/build/
 ios/Pods/
-ios/*.xcodeproj/
-ios/*.xcworkspace/
-ios/Podfile.lock
+#ios/*.xcodeproj/
+#ios/*.xcworkspace/
+#ios/Podfile.lock
 
 /android
 # /ios
