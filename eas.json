@@ -8,10 +8,16 @@
       "distribution": "internal",
       "ios": {
         "buildConfiguration": "Debug",
-        "simulator": true
+        "scheme": "appconsegnetest",
+        "cache": {
+          "disabled": true
+        }
       },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "cache": {
+          "disabled": true
+        }
       }
     },
     "preview": {
