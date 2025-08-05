@@ -8,19 +8,23 @@
       "distribution": "internal",
       "ios": {
         "buildConfiguration": "Debug",
-        "simulator": true
+        "simulator": true,
+        "pre-install": "bash eas-build-pre-install.sh"
       },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "pre-install": "bash eas-build-pre-install.sh"
       }
     },
     "preview": {
       "distribution": "internal",
       "ios": {
-        "buildConfiguration": "Release"
+        "buildConfiguration": "Release",
+        "pre-install": "bash eas-build-pre-install.sh"
       },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "pre-install": "bash eas-build-pre-install.sh"
       }
     },
     "production": {
@@ -31,14 +35,16 @@
         "image": "latest",
         "cache": {
           "disabled": true
-        }
+        },
+        "pre-install": "bash eas-build-pre-install.sh"
       },
       "android": {
         "buildType": "app-bundle",
         "image": "latest",
         "cache": {
           "disabled": true
-        }
+        },
+        "pre-install": "bash eas-build-pre-install.sh"
       }
     }
   },

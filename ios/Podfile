@@ -8,7 +8,10 @@ ENV['RCT_NEW_ARCH_ENABLED'] = '0' if podfile_properties['newArchEnabled'] == 'fa
 ENV['EX_DEV_CLIENT_NETWORK_INSPECTOR'] = podfile_properties['EX_DEV_CLIENT_NETWORK_INSPECTOR']
 
 platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
-use_modular_headers!
+
+# ❌ RIMOSSO: use_modular_headers!
+# ✅ AGGIUNTO: use_frameworks! static
+use_frameworks! :linkage => :static
 
 install! 'cocoapods',
   :deterministic_uuids => false
@@ -33,13 +36,8 @@ target 'appconsegnetest' do
 
   config = use_native_modules!(config_command)
 
-  # Forza modular headers per gRPC-C++
-  pod 'gRPC-C++', :modular_headers => true
-  pod 'gRPC-Core', :modular_headers => true
-
-  # Mantieni use_frameworks solo se necessario
-  use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
-  use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
+  # ❌ RIMOSSO: modular_headers per gRPC
+  # (non necessario con use_frameworks! :static)
 
   use_react_native!(
     :path => config[:reactNativePath],
