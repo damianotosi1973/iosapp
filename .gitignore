@@ -7,6 +7,8 @@ build/
 web-build/
 .expo/
 .expo-shared/
+.cache/
+builds/
 
 # 👉 Firebase config files (contengono chiavi private)
 *.jks
@@ -32,10 +34,6 @@ expo-debug.log
 metro-cache/
 metro-report/
 
-# 👉 EAS cache
-.cache/
-builds/
-
 # 👉 TypeScript
 *.tsbuildinfo
 
@@ -59,9 +57,10 @@ android/build/
 # 👉 iOS build (se usi bare workflow o EAS prebuild)
 ios/build/
 ios/Pods/
-#ios/*.xcodeproj/
-#ios/*.xcworkspace/
-#ios/Podfile.lock
+ios/xcuserdata/
+ios/*.xcuserstate
 
-/android
-# /ios
+# 👉 Ignora workspace e lock solo se non vuoi versionarli
+# ios/*.xcodeproj/
+# ios/*.xcworkspace/
+# ios/Podfile.lock
