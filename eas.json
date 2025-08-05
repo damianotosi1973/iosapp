@@ -1,40 +1,43 @@
 {
   "cli": {
-    "version": ">= 7.0.0"
+    "version": ">=3.0.0"
   },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
-        "env": {
-          "COCOAPODS_UPDATE": "1"
-        }
+        "buildConfiguration": "Debug",
+        "simulator": true
+      },
+      "android": {
+        "buildType": "apk"
       }
     },
     "preview": {
       "distribution": "internal",
       "ios": {
-        "env": {
-          "COCOAPODS_UPDATE": "1"
-        }
+        "buildConfiguration": "Release"
+      },
+      "android": {
+        "buildType": "apk"
       }
     },
     "production": {
-      "distribution": "store",
       "ios": {
-        "env": {
-          "COCOAPODS_UPDATE": "1"
-        }
-      }
-    },
-    "adhoc": {
-      "distribution": "internal",
-      "ios": {
+        "buildConfiguration": "Release",
         "enterpriseProvisioning": "adhoc",
-        "simulator": false,
-        "env": {
-          "COCOAPODS_UPDATE": "1"
+        "scheme": "appconsegnetest",
+        "image": "latest",
+        "cache": {
+          "disabled": true
+        }
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "image": "latest",
+        "cache": {
+          "disabled": true
         }
       }
     }
