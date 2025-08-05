@@ -1,6 +1,6 @@
 platform :ios, '15.1'
 
-use_frameworks! :linkage => :dynamic
+use_modular_headers!
 
 require_relative '../node_modules/react-native/scripts/react_native_pods'
 require_relative '../node_modules/@react-native-community/cli-platform-ios/native_modules'
@@ -15,8 +15,17 @@ target 'appconsegnetest' do
   pod 'Firebase/Firestore'
   pod 'Firebase/Messaging'
 
+  # 🔧 Patch per compatibilità Swift
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'FirebaseCore', :modular_headers => true
+  pod 'FirebaseCoreExtension', :modular_headers => true
+  pod 'FirebaseAuthInterop', :modular_headers => true
+  pod 'FirebaseAppCheckInterop', :modular_headers => true
+  pod 'RecaptchaInterop', :modular_headers => true
+
   post_install do |installer|
     react_native_post_install(installer)
+
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
         config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
