@@ -4,9 +4,16 @@ export default {
     slug: "iosappconsegne",
     version: "1.0.0",
     newArchEnabled: false,
+    icon: "./assets/icon.png", // ← Assicurati che esista
 
     ios: {
-      bundleIdentifier: "com.damianotosi.consegneaziendale"
+      bundleIdentifier: "com.damianotosi.consegneaziendale",
+      buildNumber: "1.0.0"
+    },
+
+    android: {
+      package: "com.damianotosi.consegneaziendale",
+      versionCode: 1
     },
 
     extra: {
@@ -36,4 +43,4 @@ export default {
       }
     }
   }
-}
+};
