@@ -2,6 +2,7 @@ export default {
   expo: {
     name: "appconsegne-test",
     slug: "iosappconsegne",
+    scheme: "appconsegne", // 👈 AGGIUNGI QUESTA RIGA
     version: "1.0.0",
     newArchEnabled: false,
     icon: "./assets/icon.png", // ← Assicurati che esista
