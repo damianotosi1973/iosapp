@@ -8,7 +8,6 @@
       "distribution": "internal",
       "ios": {
         "buildConfiguration": "Debug",
-        "scheme": "appconsegnetest",
         "cache": {
           "disabled": true
         }
@@ -33,15 +32,12 @@
       "ios": {
         "buildConfiguration": "Release",
         "enterpriseProvisioning": "adhoc",
-        "scheme": "appconsegnetest",
-        "image": "latest",
         "cache": {
           "disabled": true
         }
       },
       "android": {
         "buildType": "app-bundle",
-        "image": "latest",
         "cache": {
           "disabled": true
         }
