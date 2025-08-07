@@ -10,7 +10,8 @@
         "buildConfiguration": "Debug",
         "cache": {
           "disabled": true
-        }
+        },
+        "googleServicesFile": "./ios/GoogleService-Info.plist"
       },
       "android": {
         "buildType": "apk",
@@ -22,7 +23,8 @@
     "preview": {
       "distribution": "internal",
       "ios": {
-        "buildConfiguration": "Release"
+        "buildConfiguration": "Release",
+        "googleServicesFile": "./ios/GoogleService-Info.plist"
       },
       "android": {
         "buildType": "apk"
@@ -34,7 +36,8 @@
         "enterpriseProvisioning": "adhoc",
         "cache": {
           "disabled": true
-        }
+        },
+        "googleServicesFile": "./ios/GoogleService-Info.plist"
       },
       "android": {
         "buildType": "app-bundle",
